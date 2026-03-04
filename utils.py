@@ -22,6 +22,15 @@ def split_into_clauses(text):
             
     return clauses if clauses else [text]
 
+import math
+
+def get_entropy(probabilities):
+    entropy = 0.0
+    for prob in probabilities.values():
+        if prob > 0:
+            entropy -= prob * math.log(prob)
+    return entropy
+
 def get_sentiment(probabilities):
     pos_emotions = ["joy", "love", "optimism", "pride", "gratitude", "excitement"]
     neg_emotions = ["sadness", "anger", "fear", "disgust", "disappointment", "anxiety"]
