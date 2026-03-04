@@ -5,7 +5,6 @@ from utils import process_emotions
 
 MODEL_NAME = "SamLowe/roberta-base-go_emotions"
 
-@torch.cache
 @torch.no_grad()
 def load_model():
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)

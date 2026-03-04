@@ -4,7 +4,6 @@ from utils import process_toxicity
 
 MODEL_NAME = "unitary/toxic-bert"
 
-@torch.cache
 @torch.no_grad()
 def load_hate_model():
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
