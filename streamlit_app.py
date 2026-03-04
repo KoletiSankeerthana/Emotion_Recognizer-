@@ -63,20 +63,20 @@ if analyze_btn:
     e_col1, e_col2 = st.columns([1, 1], gap="large")
     
     with e_col1:
-        st.markdown("""
+        html_content = f"""
         <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #e9ecef;'>
-        """, unsafe_allow_html=True)
-        
-        st.markdown(f"**Overall Sentiment:** {full_res['sentiment']}")
+            <p style='margin-bottom: 15px;'><b>Overall Sentiment:</b> {full_res['sentiment']}</p>
+        """
         
         if "Mixed" in top_emo:
-            st.markdown(f"#### Primary Emotion: **{full_res['primary'].split(' ')[0].title()}**")
-            st.markdown(f"#### Secondary Emotion: **{full_res['secondary'].split(' ')[0].title()}**")
-            st.markdown("<br>_The sentence expresses an emotional conflict or blend of multiple distinct feelings._", unsafe_allow_html=True)
+            html_content += f"<h4 style='margin-bottom: 5px;'>Primary Emotion: <b>{full_res['primary'].split(' ')[0].title()}</b></h4>"
+            html_content += f"<h4 style='margin-bottom: 10px;'>Secondary Emotion: <b>{full_res['secondary'].split(' ')[0].title()}</b></h4>"
+            html_content += "<p style='font-style: italic; color: #555; margin-bottom: 0px;'>The sentence expresses an emotional conflict or blend of multiple distinct feelings.</p>"
         else:
-            st.markdown(f"#### Primary Emotion: **{top_emo.title()}**")
+            html_content += f"<h4 style='margin-bottom: 0px;'>Primary Emotion: <b>{top_emo.title()}</b></h4>"
             
-        st.markdown("</div>", unsafe_allow_html=True)
+        html_content += "</div>"
+        st.markdown(html_content, unsafe_allow_html=True)
 
     with e_col2:
         # 3 aligned Metric cards
@@ -145,26 +145,26 @@ if analyze_btn:
         
     df_emo['Color'] = df_emo.apply(get_color, axis=1)
     df_emo['Prob_Text'] = df_emo['Probability'].apply(lambda x: f"{x*100:.1f}%")
-    df_emo = df_emo.sort_values(by="Probability", ascending=True) # Plotly draws bottom up
-    df_emo = df_emo[df_emo["Probability"] > 0.01].tail(8) # compact top 8
+    df_emo = df_emo.sort_values(by="Probability", ascending=False) # Largest on left
+    df_emo = df_emo[df_emo["Probability"] > 0.01].head(8) # compact top 8
     
     fig_emo = px.bar(
         df_emo, 
-        y="Emotion", 
-        x="Probability", 
-        orientation='h',
+        x="Emotion", 
+        y="Probability", 
+        orientation='v',
         text="Prob_Text",
         color="Emotion",
         color_discrete_map={row['Emotion']: row['Color'] for _, row in df_emo.iterrows()}
     )
-    fig_emo.update_traces(textposition='outside')
+    fig_emo.update_traces(textposition='outside', width=0.4)
     fig_emo.update_layout(
         height=350, 
         showlegend=False, 
         margin=dict(l=0, r=0, t=10, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(showgrid=True, gridcolor='#f8f9fa', range=[0, 1])
+        yaxis=dict(showgrid=True, gridcolor='#f8f9fa', range=[0, 1.1])
     )
     st.plotly_chart(fig_emo, use_container_width=True)
     
@@ -174,21 +174,22 @@ if analyze_btn:
     st.markdown("### 🛡️ Hate Speech Analysis")
     top_hate = hate_results["top_category"]
     
-    st.markdown("""
-    <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #e9ecef;'>
-    """, unsafe_allow_html=True)
+    html_content_h = f"""
+    <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #e9ecef; margin-bottom: 20px;'>
+        <h4 style='margin-bottom: 10px;'>Top Category: <b>{top_hate.capitalize()}</b></h4>
+    """
     
-    st.markdown(f"#### Top Category: **{top_hate.capitalize()}**")
     if top_hate != "neutral":
         conf_val_h = hate_results['probabilities'][top_hate]
-        st.markdown(f"*Confidence: {conf_val_h*100:.0f}%*")
-        st.markdown("<br>_The model detected traces of aggressive or toxic language._", unsafe_allow_html=True)
+        html_content_h += f"<p style='margin-bottom: 5px;'><i>Confidence: {conf_val_h*100:.0f}%</i></p>"
+        html_content_h += "<p style='font-style: italic; color: #555; margin-bottom: 0px;'>The model detected traces of aggressive or toxic language.</p>"
     else:
         conf_val_h = hate_results['probabilities'].get('neutral', 1.0)
-        st.markdown(f"*Confidence: {conf_val_h*100:.0f}%*")
-        st.markdown("<br>_The text appears to be clean standard language._", unsafe_allow_html=True)
+        html_content_h += f"<p style='margin-bottom: 5px;'><i>Confidence: {conf_val_h*100:.0f}%</i></p>"
+        html_content_h += "<p style='font-style: italic; color: #555; margin-bottom: 0px;'>The text appears to be clean standard language.</p>"
         
-    st.markdown("</div><br>", unsafe_allow_html=True)
+    html_content_h += "</div>"
+    st.markdown(html_content_h, unsafe_allow_html=True)
     
     df_hate = pd.DataFrame(list(hate_results["probabilities"].items()), columns=["Category", "Probability"])
     
@@ -197,25 +198,25 @@ if analyze_btn:
         
     df_hate['Color'] = df_hate['Category'].apply(get_hate_color)
     df_hate['Prob_Text'] = df_hate['Probability'].apply(lambda x: f"{x*100:.1f}%")
-    df_hate = df_hate.sort_values(by="Probability", ascending=True)
+    df_hate = df_hate.sort_values(by="Probability", ascending=False)
     
     fig_hate = px.bar(
         df_hate, 
-        y="Category", 
-        x="Probability", 
-        orientation='h',
+        x="Category", 
+        y="Probability", 
+        orientation='v',
         text="Prob_Text",
         color="Category",
         color_discrete_map={row['Category']: row['Color'] for _, row in df_hate.iterrows()}
     )
-    fig_hate.update_traces(textposition='outside')
+    fig_hate.update_traces(textposition='outside', width=0.4)
     fig_hate.update_layout(
-        height=200, 
+        height=250, 
         showlegend=False, 
         margin=dict(l=0, r=0, t=10, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(showgrid=True, gridcolor='#e9ecef', range=[0, 1])
+        yaxis=dict(showgrid=True, gridcolor='#e9ecef', range=[0, 1.1])
     )
     st.plotly_chart(fig_hate, use_container_width=True)
         
