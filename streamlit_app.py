@@ -35,18 +35,34 @@ if st.button("Analyze"):
     
     # Emotion Section
     st.subheader("Emotion Detection Section")
-    top_emo = emo_results["top_emotion"]
-    st.write(f"**Top Emotion:** {top_emo.capitalize()}")
+    full_res = emo_results["full_sentence"]
+    top_emo = full_res["top_emotion"]
+    
+    st.write(f"**Top Emotion:** {top_emo.title()}")
+    
+    if "Mixed" in top_emo:
+        st.write(f"**Primary:** {full_res['primary']}")
+        st.write(f"**Secondary:** {full_res['secondary']}")
+        
+    if len(emo_results["clauses"]) > 1:
+        st.write("**Clause Analysis:**")
+        for i, c_data in enumerate(emo_results["clauses"]):
+            c_top = c_data["results"]["top_emotion"]
+            if "Mixed" not in c_top:
+                c_top_str = c_data["results"]["primary"]
+            else:
+                c_top_str = f"{c_data['results']['primary']}, {c_data['results']['secondary']}"
+            st.write(f"- Clause {i+1} → {c_top_str}")
     
     col1, col2 = st.columns([1, 2])
     
     with col1:
         st.write("**All Emotion Probabilities:**")
-        for e, p in emo_results["probabilities"].items():
+        for e, p in full_res["probabilities"].items():
             st.write(f"- {e.capitalize()}: {p*100:.1f}%")
             
     with col2:
-        df_emo = pd.DataFrame(list(emo_results["probabilities"].items()), columns=["Emotion", "Confidence (%)"])
+        df_emo = pd.DataFrame(list(full_res["probabilities"].items()), columns=["Emotion", "Confidence (%)"])
         df_emo["Confidence (%)"] = df_emo["Confidence (%)"] * 100
         fig_emo = px.bar(df_emo, x="Emotion", y="Confidence (%)", title="Emotion Confidence Scores")
         fig_emo.update_layout(height=400)
