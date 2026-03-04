@@ -157,7 +157,7 @@ if analyze_btn:
         color="Emotion",
         color_discrete_map={row['Emotion']: row['Color'] for _, row in df_emo.iterrows()}
     )
-    fig_emo.update_traces(textposition='outside', width=0.4)
+    fig_emo.update_traces(textposition='outside', width=0.2)
     fig_emo.update_layout(
         height=350, 
         showlegend=False, 
@@ -209,7 +209,7 @@ if analyze_btn:
         color="Category",
         color_discrete_map={row['Category']: row['Color'] for _, row in df_hate.iterrows()}
     )
-    fig_hate.update_traces(textposition='outside', width=0.4)
+    fig_hate.update_traces(textposition='outside', width=0.2)
     fig_hate.update_layout(
         height=250, 
         showlegend=False, 
