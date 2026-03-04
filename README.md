@@ -1,1 +1,197 @@
-# Emotion Intelligence System \n\n![Emotion Intelligence](https://img.shields.io/badge/Status-Production%20Ready-success) ![NLP](https://img.shields.io/badge/Architecture-Transformer%20Models-blue) ![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-red) \n\nAn advanced, Explainable AI (XAI) tool for real-time natural language processing, explicitly designed for deep emotion detection, emotional conflict analysis, and hate speech classification.  \n\nUnlike traditional one-pass classifiers, this system goes beyond predicting a single label. It actively breaks down semantic intent, explicitly highlights textual triggers, identifies emotional polarity, traces session history, and provides qualitative risk-level interpretations.\n\n## 🚀 Key Features\n\n*   **Explainable AI (XAI) Interpretations**: Directly generates qualitative, human-readable explanations answering *why* a specific emotion or toxicity label was triggered based on context.\n*   **Clause-Level Emotional Tracking**: Automatically parses complex, conflicting sentences (e.g., using \"but\", \"however\") and independently tracks the emotional tone of each sub-clause before aggregating the final result.\n*   **Trigger Extraction**: Visually highlights the exact sub-phrases within the user's input that triggered the primary emotional prediction.\n*   **Deep Emotional Metrics**: Computes explicit scoring across Dominance (how strongly one emotion overpowers another) and Balance Indexes, as well as an aggregate Positive/Negative Polarity Meter.\n*   **Hate Speech & Toxicity Analysis**: Multi-label detection across Hateful, Targeted, and Aggressive classes, outputting explicit Risk Levels and explanations.\n*   **Session History & Tracking**: Automatically plots historical session entries on an interactive timeline to analyze overarching user intent and mood swings.\n*   **Report Generation**: Includes one-click JSON payload exports for offline analytics parsing.\n\n## 🛠️ Architecture & Tech Stack\n\n*   **Models**: Pre-trained Transformer Architectures (`distilbert-base-uncased-go-emotions` and `toxic-bert`).\n*   **Frontend Data Science**: Streamlit UI with `st.session_state` management.\n*   **Visualizations**: Interactive Plotly Express horizontal distribution charting.\n*   **Libraries**: `transformers`, `torch`, `pandas`, `plotly`, `scipy`.\n\n## 🧠 Running the System\n\n1.  **Clone the Repository** and ensure you have `Python 3.9+`.\n2.  **Install Requirements**:\n    ```bash\n    pip install -r requirements.txt\n    ```\n3.  **Boot the Streamlit Application**:\n    ```bash\n    streamlit run streamlit_app.py\n    ```\n\nThe system will automatically download the required transformer `.bin` and `pytorch_model.bin` model weights on first boot and cache them into memory using `@st.cache_resource` for high-throughput inference.\n\n## 📊 Deployment\nDesigned for native, single-click deployment to **Streamlit Community Cloud**.
+# Emotion Intelligence System
+
+An AI-powered web application that analyzes text to detect **emotions and potential hate speech** using **Transformer-based Natural Language Processing models**.
+
+The application predicts emotional tone, identifies sentiment, and detects harmful language using an interactive **Streamlit web interface**.
+
+---
+
+## Live Demo
+
+Try the application here:
+
+**Live App:**  
+https://ioahfzgzr2bard8nngyxhh.streamlit.app/
+
+---
+
+## Project Overview
+
+Human communication often contains emotional signals. This project analyzes text input and identifies emotional states using NLP techniques.
+
+The system allows users to:
+
+- Detect the **primary emotion** expressed in text
+- Identify **overall sentiment**
+- View **emotion probability distribution**
+- Calculate **emotional metrics**
+- Detect **hate speech or toxic language**
+- Receive **emotion-based insights**
+
+---
+
+## Features
+
+### Emotion Detection
+
+The system predicts emotional states using a transformer-based NLP model.
+
+Supported emotions include:
+
+- Joy  
+- Sadness  
+- Anger  
+- Fear  
+- Surprise  
+- Disgust  
+- Neutral  
+
+The model returns the **dominant emotion and probability scores**.
+
+---
+
+### Sentiment Analysis
+
+The system also identifies the **overall sentiment** of the text.
+
+Sentiment categories include:
+
+- Positive
+- Negative
+- Neutral
+
+---
+
+### Emotional Metrics
+
+Additional metrics help interpret the emotional strength of the text.
+
+**Confidence Score**  
+Represents the model's confidence in the predicted emotion.
+
+**Dominance Score**
+
+Dominance = Top Emotion Probability − Second Emotion Probability
+
+**Balance Index**
+
+Balance = 1 − Dominance
+
+These metrics help understand whether the emotion is **strong or mixed**.
+
+---
+
+### Emotion Visualization
+
+Emotion probabilities are displayed using charts to show the **distribution of emotions in the text**.
+
+This helps users easily understand which emotions are present.
+
+---
+
+### Hate Speech Detection
+
+The system analyzes text for **potentially harmful language**.
+
+Detected categories include:
+
+- Neutral
+- Aggressive language
+- Targeted harassment
+- Hate speech
+
+The output includes:
+
+- Top category
+- Probability score
+- Risk interpretation
+
+---
+
+### Emotion-Based Suggestions
+
+The application generates helpful insights based on detected emotions.
+
+Example:
+
+If frustration or anger is detected, the system may suggest taking a pause before reacting.
+
+---
+
+## Technologies Used
+
+**Programming Language**
+
+- Python
+
+**Machine Learning / NLP**
+
+- Hugging Face Transformers  
+- PyTorch  
+
+**Data Processing**
+
+- NumPy  
+- Pandas  
+
+**Visualization**
+
+- Plotly  
+- Matplotlib  
+
+**Web Application**
+
+- Streamlit  
+
+---
+
+## Project Structure
+
+```
+Emotion_Recognizer
+│
+├── .gitignore           # Git ignored files
+├── streamlit_app.py     # Main Streamlit application
+├── emotion_model.py     # Emotion detection model logic
+├── hate_model.py        # Hate speech detection model
+├── utils.py             # Helper functions
+├── requirements.txt     # Project dependencies
+└── README.md            # Project documentation
+```
+
+---
+
+## Installation
+
+Clone the repository:
+
+```
+git clone https://github.com/KoletiSankeerthana/Emotion_Recognizer.git
+```
+
+Navigate to the project folder:
+
+```
+cd Emotion_Recognizer
+```
+
+Install dependencies:
+
+```
+pip install -r requirements.txt
+```
+
+---
+
+## Running the Application
+
+Run the Streamlit app:
+
+```
+streamlit run streamlit_app.py
+```
+
+The application will open in your browser.
+
+---
+
