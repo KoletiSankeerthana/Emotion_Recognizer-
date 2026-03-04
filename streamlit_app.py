@@ -82,12 +82,20 @@ if st.button("Analyze"):
             st.write(f"- Positive Confidence: {pos_conf*100:.1f}%")
             st.write(f"- Negative Confidence: {neg_conf*100:.1f}%")
 
-    # 3. Dominance & Suggestions
+    # 3. Dominance, Triggers & Suggestions
     st.write("---")
+    
+    st.write(f"**Softmax Entropy (Uncertainty):** {full_res.get('entropy', 0):.2f}")
     st.write(f"**Emotional Dominance Score:** {full_res['dominance']:.2f}")
     st.write(f"**Emotional Balance Index:** {full_res['balance']:.2f}")
     st.write(f"*{full_res['dominance_text']}*")
     
+    triggers = full_res.get("trigger_words", [])
+    if triggers:
+        st.write("**Emotional Trigger:**")
+        for t in triggers:
+            st.write(f"- \"{t}\"")
+            
     st.info(f"**Suggestion:** {full_res['suggestion']}")
     
     st.write("---")

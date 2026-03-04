@@ -140,6 +140,7 @@ def process_emotions(raw_results):
     suggestion = get_suggestion(top_emotion)
     reliability = get_reliability(top_score)
     dominance, balance, dom_text = get_dominance_metrics(sorted_emotions)
+    entropy_score = get_entropy(probabilities)
             
     return {
         "top_emotion": top_label,
@@ -153,7 +154,8 @@ def process_emotions(raw_results):
         "reliability": reliability,
         "dominance": dominance,
         "balance": balance,
-        "dominance_text": dom_text
+        "dominance_text": dom_text,
+        "entropy": entropy_score
     }
 
 def process_toxicity(raw_results):
