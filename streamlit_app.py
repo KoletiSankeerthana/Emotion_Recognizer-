@@ -175,7 +175,6 @@ if analyze_btn:
     df_emo['Color'] = df_emo.apply(get_color, axis=1)
     df_emo['Prob_Text'] = df_emo['Probability'].apply(lambda x: f"{x*100:.1f}%")
     df_emo = df_emo.sort_values(by="Probability", ascending=False)
-    df_emo = df_emo[df_emo['Probability'] > 0.005] # Remove tiny probabilities
     
     fig_emo = px.bar(
         df_emo, 
