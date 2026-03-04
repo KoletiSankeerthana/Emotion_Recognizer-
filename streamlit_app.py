@@ -38,22 +38,59 @@ if st.button("Analyze"):
     full_res = emo_results["full_sentence"]
     top_emo = full_res["top_emotion"]
     
+    # 1. Broad Sentiment & Core Emotion
+    st.write(f"**Overall Sentiment:** {full_res['sentiment']}")
     st.write(f"**Top Emotion:** {top_emo.title()}")
+    st.write(f"*{full_res['reliability']}*")
     
     if "Mixed" in top_emo:
         st.write(f"**Primary:** {full_res['primary']}")
         st.write(f"**Secondary:** {full_res['secondary']}")
         
+    # 2. Emotional Conflict Detection
     if len(emo_results["clauses"]) > 1:
+        st.write("---")
         st.write("**Clause Analysis:**")
+        
+        has_pos = False
+        has_neg = False
+        pos_conf = 0
+        neg_conf = 0
+        
         for i, c_data in enumerate(emo_results["clauses"]):
-            c_top = c_data["results"]["top_emotion"]
+            c_res = c_data["results"]
+            c_top = c_res["top_emotion"]
+            c_clause = c_data["clause"]
+            
             if "Mixed" not in c_top:
-                c_top_str = c_data["results"]["primary"]
+                c_top_str = c_res["primary"]
             else:
-                c_top_str = f"{c_data['results']['primary']}, {c_data['results']['secondary']}"
-            st.write(f"- Clause {i+1} → {c_top_str}")
+                c_top_str = f"{c_res['primary']}, {c_res['secondary']}"
+                
+            st.write(f"- Clause {i+1}: \"{c_clause}\"")
+            st.write(f"  → {c_top_str}")
+            
+            if c_res["sentiment"] == "Positive":
+                has_pos = True
+                pos_conf = max(pos_conf, c_res["pos_score"])
+            if c_res["sentiment"] == "Negative":
+                has_neg = True
+                neg_conf = max(neg_conf, c_res["neg_score"])
+                
+        if has_pos and has_neg:
+            st.error("**Emotional Conflict Detected**")
+            st.write(f"- Positive Confidence: {pos_conf*100:.1f}%")
+            st.write(f"- Negative Confidence: {neg_conf*100:.1f}%")
+
+    # 3. Dominance & Suggestions
+    st.write("---")
+    st.write(f"**Emotional Dominance Score:** {full_res['dominance']:.2f}")
+    st.write(f"**Emotional Balance Index:** {full_res['balance']:.2f}")
+    st.write(f"*{full_res['dominance_text']}*")
     
+    st.info(f"**Suggestion:** {full_res['suggestion']}")
+    
+    st.write("---")
     col1, col2 = st.columns([1, 2])
     
     with col1:

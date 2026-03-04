@@ -11,7 +11,6 @@ def split_into_clauses(text):
     clauses = []
     first_part = parts[0].strip()
     if first_part:
-        # Strip trailing commas if present and not needed
         if first_part.endswith(','):
             first_part = first_part[:-1].strip()
         clauses.append(first_part)
@@ -23,10 +22,68 @@ def split_into_clauses(text):
             
     return clauses if clauses else [text]
 
+def get_sentiment(probabilities):
+    pos_emotions = ["joy", "love", "optimism", "pride", "gratitude", "excitement"]
+    neg_emotions = ["sadness", "anger", "fear", "disgust", "disappointment", "anxiety"]
+    
+    pos_score = sum(probabilities.get(e, 0) for e in pos_emotions)
+    neg_score = sum(probabilities.get(e, 0) for e in neg_emotions)
+    neu_score = probabilities.get("neutral", 0.0) + probabilities.get("surprise", 0.0)
+    
+    if pos_score > neg_score and pos_score > neu_score:
+        return "Positive", pos_score, neg_score
+    elif neg_score > pos_score and neg_score > neu_score:
+        return "Negative", pos_score, neg_score
+    else:
+        return "Neutral", pos_score, neg_score
+
+def get_suggestion(top_emotion_name):
+    suggestions = {
+        "fear": "You may be experiencing uncertainty. Consider preparing step-by-step to reduce anxiety.",
+        "anxiety": "You might be feeling overwhelmed. Try to ground yourself and focus on one thing at a time.",
+        "anger": "You appear frustrated. It might be helpful to take a pause and reflect before proceeding.",
+        "sadness": "Experiencing this is difficult; consider taking some time for self-care and rest.",
+        "disappointment": "It is okay to feel let down. Acknowledge the feeling and look for small positive steps forward.",
+        "disgust": "You seem to be reacting strongly to something adverse. Stepping back may provide a better perspective.",
+        "joy": "This is a great moment! Encourage yourself to continue and build on this positive momentum.",
+        "excitement": "Harness this energy to push forward on your goals.",
+        "pride": "You've likely achieved something meaningful. Take a moment to appreciate your effort.",
+        "optimism": "A positive outlook is powerful. Keep focusing on the potential for good outcomes.",
+        "gratitude": "Appreciating the good things fosters resilience. Hold onto this positive perspective.",
+        "love": "This is a strong feeling of connection. Nurturing it can bring comfort and joy.",
+        "surprise": "Unexpected events can be jarring. Take a moment to process the new information.",
+        "neutral": "You seem to be in a balanced and even state of mind."
+    }
+    return suggestions.get(top_emotion_name, "Take a moment to process your feelings and proceed mindfully.")
+
+def get_reliability(top_score):
+    if top_score > 0.8:
+        return "High confidence prediction"
+    elif top_score >= 0.5:
+        return "Moderate confidence prediction"
+    else:
+        return "Low confidence — emotional ambiguity detected"
+
+def get_dominance_metrics(sorted_emotions):
+    if len(sorted_emotions) < 2:
+        return 1.0, 0.0, "Emotion strongly dominant"
+        
+    top_score = sorted_emotions[0][1]
+    second_score = sorted_emotions[1][1]
+    
+    dominance = top_score - second_score
+    balance = 1.0 - dominance
+    
+    if dominance > 0.5:
+        text = "Emotion strongly dominant"
+    elif dominance >= 0.2:
+        text = "Moderately dominant"
+    else:
+        text = "Emotionally balanced / mixed"
+        
+    return dominance, balance, text
+
 def process_emotions(raw_results):
-    """
-    Map 28 GoEmotions to target 14 categories (added excitement):
-    """
     targets = {
         "joy": ["joy", "amusement"],
         "sadness": ["sadness", "grief"],
@@ -52,7 +109,6 @@ def process_emotions(raw_results):
                 mapped_scores[t_key] += score
                 break
                 
-    # Normalize to 1.0 (some labels might have been ignored)
     total = sum(mapped_scores.values())
     if total > 0:
         mapped_scores = {k: v / total for k, v in mapped_scores.items()}
@@ -63,19 +119,14 @@ def process_emotions(raw_results):
     sorted_emotions = sorted(mapped_scores.items(), key=lambda x: x[1], reverse=True)
     top_emotion, top_score = sorted_emotions[0]
     
-    # Rule 1: Neutral if ALL probabilities < 25% (ignoring the neutral score itself for the check)
     if all(score < 0.25 for name, score in sorted_emotions if name != "neutral"):
         top_label = "neutral"
     else:
         top_label = top_emotion
-        if top_label == "neutral" and len(sorted_emotions) > 1:
-             # if neutral naturally wins but isn't < 25% for everything, that's fine, we keep it
-             pass
-
+        
     primary_emo = f"{top_emotion} ({top_score*100:.0f}%)"
     secondary_emo = None
     
-    # Rule 2: Mixed emotion check, proportional -> second >= 60% of top
     if len(sorted_emotions) > 1 and top_label != "neutral":
         second_emotion, second_score = sorted_emotions[1]
         
@@ -84,18 +135,28 @@ def process_emotions(raw_results):
             primary_emo = f"{top_emotion} ({top_score*100:.0f}%)"
             secondary_emo = f"{second_emotion} ({second_score*100:.0f}%)"
             
+    probabilities = dict(sorted_emotions)
+    sentiment, pos_score, neg_score = get_sentiment(probabilities)
+    suggestion = get_suggestion(top_emotion)
+    reliability = get_reliability(top_score)
+    dominance, balance, dom_text = get_dominance_metrics(sorted_emotions)
+            
     return {
         "top_emotion": top_label,
         "primary": primary_emo,
         "secondary": secondary_emo,
-        "probabilities": dict(sorted_emotions)
+        "probabilities": probabilities,
+        "sentiment": sentiment,
+        "pos_score": pos_score,
+        "neg_score": neg_score,
+        "suggestion": suggestion,
+        "reliability": reliability,
+        "dominance": dominance,
+        "balance": balance,
+        "dominance_text": dom_text
     }
 
 def process_toxicity(raw_results):
-    """
-    Map toxic-bert labels to: hateful, targeted, aggressive, neutral.
-    """
-    # Heuristic mapping
     hateful = raw_results.get("identity_hate", 0) + (raw_results.get("severe_toxic", 0) * 0.5)
     targeted = raw_results.get("threat", 0) + (raw_results.get("insult", 0) * 0.5)
     aggressive = raw_results.get("toxic", 0) + (raw_results.get("obscene", 0) * 0.5)
@@ -111,7 +172,6 @@ def process_toxicity(raw_results):
         "neutral": neutral
     }
     
-    # Normalize
     total = sum(scores.values())
     if total > 0:
         scores = {k: v / total for k, v in scores.items()}
