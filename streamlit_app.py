@@ -9,7 +9,7 @@ st.set_page_config(page_title="Emotion & Hate Speech Detection", layout="centere
 st.markdown("""
 <div style="text-align: center; margin-bottom: 30px;">
     <h1 style="color: #2c3e50; font-family: 'Helvetica Neue', sans-serif;">Emotion Intelligence System</h1>
-    <h3 style="color: #7f8c8d; font-family: 'Helvetica Neue', sans-serif; font-weight: 300;">AI-powered Emotion and Hate Speech Analysis</h3>
+    <h3 style="color: #7f8c8d; font-family: 'Helvetica Neue', sans-serif; font-weight: 300;">AI-powered Emotion and Hate Speech Detection using Transformer-based NLP models.</h3>
     <p style="color: #95a5a6; max-width: 600px; margin: 0 auto; line-height: 1.5;">
         This tool analyzes text to detect emotional tone, mixed emotional states, and potential hate speech using transformer-based NLP models.
     </p>
@@ -145,14 +145,14 @@ if analyze_btn:
         
     df_emo['Color'] = df_emo.apply(get_color, axis=1)
     df_emo['Prob_Text'] = df_emo['Probability'].apply(lambda x: f"{x*100:.1f}%")
-    df_emo = df_emo.sort_values(by="Probability", ascending=False) # Largest on left
-    df_emo = df_emo[df_emo["Probability"] > 0.01].head(8) # compact top 8
+    df_emo = df_emo.sort_values(by="Probability", ascending=True) # Plotly draws bottom up
+    df_emo = df_emo[df_emo["Probability"] > 0.01].tail(8) # compact top 8
     
     fig_emo = px.bar(
         df_emo, 
-        x="Emotion", 
-        y="Probability", 
-        orientation='v',
+        y="Emotion", 
+        x="Probability", 
+        orientation='h',
         text="Prob_Text",
         color="Emotion",
         color_discrete_map={row['Emotion']: row['Color'] for _, row in df_emo.iterrows()}
@@ -164,7 +164,7 @@ if analyze_btn:
         margin=dict(l=0, r=0, t=10, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=dict(showgrid=True, gridcolor='#f8f9fa', range=[0, 1.1])
+        xaxis=dict(showgrid=True, gridcolor='#f8f9fa', range=[0, 1.1])
     )
     st.plotly_chart(fig_emo, use_container_width=True)
     
@@ -198,13 +198,13 @@ if analyze_btn:
         
     df_hate['Color'] = df_hate['Category'].apply(get_hate_color)
     df_hate['Prob_Text'] = df_hate['Probability'].apply(lambda x: f"{x*100:.1f}%")
-    df_hate = df_hate.sort_values(by="Probability", ascending=False)
+    df_hate = df_hate.sort_values(by="Probability", ascending=True)
     
     fig_hate = px.bar(
         df_hate, 
-        x="Category", 
-        y="Probability", 
-        orientation='v',
+        y="Category", 
+        x="Probability", 
+        orientation='h',
         text="Prob_Text",
         color="Category",
         color_discrete_map={row['Category']: row['Color'] for _, row in df_hate.iterrows()}
@@ -216,7 +216,7 @@ if analyze_btn:
         margin=dict(l=0, r=0, t=10, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=dict(showgrid=True, gridcolor='#e9ecef', range=[0, 1.1])
+        xaxis=dict(showgrid=True, gridcolor='#e9ecef', range=[0, 1.1])
     )
     st.plotly_chart(fig_hate, use_container_width=True)
         
