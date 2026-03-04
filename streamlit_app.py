@@ -174,13 +174,14 @@ if analyze_btn:
         
     df_emo['Color'] = df_emo.apply(get_color, axis=1)
     df_emo['Prob_Text'] = df_emo['Probability'].apply(lambda x: f"{x*100:.1f}%")
-    df_emo = df_emo.sort_values(by="Probability", ascending=True) # Plotly draws bottom up
+    df_emo = df_emo.sort_values(by="Probability", ascending=False)
+    df_emo = df_emo[df_emo['Probability'] > 0.005] # Remove tiny probabilities
     
     fig_emo = px.bar(
         df_emo, 
-        y="Emotion", 
-        x="Probability", 
-        orientation='h',
+        x="Emotion", 
+        y="Probability", 
+        orientation='v',
         text="Prob_Text",
         color="Emotion",
         color_discrete_map={row['Emotion']: row['Color'] for _, row in df_emo.iterrows()}
@@ -192,7 +193,7 @@ if analyze_btn:
         margin=dict(l=0, r=0, t=10, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(showgrid=True, gridcolor='#f8f9fa', range=[0, 1.1])
+        yaxis=dict(showgrid=True, gridcolor='#f8f9fa', range=[0, 1.1])
     )
     st.plotly_chart(fig_emo, use_container_width=True)
     
@@ -251,39 +252,6 @@ if analyze_btn:
     )
     st.plotly_chart(fig_hate, use_container_width=True)
 
-    # Add to History
-    st.session_state.history.append({
-        "text": text_input,
-        "emotion": top_emo,
-        "hate_category": top_hate,
-        "sentiment": full_res['sentiment']
-    })
-
-st.markdown("---")
-
-if st.session_state.history:
-    st.markdown("### 📈 Session History Trend")
-    
-    # Create Trend df
-    history_data = []
-    for i, h in enumerate(st.session_state.history):
-        history_data.append({"Entry": f"Entry {i+1}", "Emotion": h["emotion"].title()})
-        st.markdown(f"**Entry {i+1}** → _{h['emotion'].title()}_")
-        
-    df_trend = pd.DataFrame(history_data)
-    # Give line chart
-    fig_trend = px.line(df_trend, x="Entry", y="Emotion", markers=True)
-    fig_trend.update_layout(height=300, margin=dict(l=0, r=0, t=10, b=0), yaxis_title="Detected Emotion")
-    st.plotly_chart(fig_trend, use_container_width=True)
-    
-    # Download Button
-    report_json = json.dumps(st.session_state.history, indent=4)
-    st.download_button(
-        label="📄 Download Emotion Analysis Report",
-        data=report_json,
-        file_name="emotion_analysis_report.json",
-        mime="application/json"
-    )
         
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("""
