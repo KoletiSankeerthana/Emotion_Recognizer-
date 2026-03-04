@@ -46,24 +46,43 @@ def get_sentiment(probabilities):
     else:
         return "Neutral", pos_score, neg_score
 
+def get_emotion_interpretation(top_emotion_name):
+    interpretations = {
+        "fear": "The sentence expresses concern or apprehension about potential negative outcomes or perceived dangers.",
+        "anxiety": "The sentence conveys feelings of unease, worry, or nervousness regarding uncertain events.",
+        "anger": "The sentence expresses frustration, resentment, or hostility, likely caused by perceived unfairness or obstacles.",
+        "sadness": "The sentence reflects feelings of loss, disappointment, or sorrow.",
+        "disappointment": "The sentence conveys a sense of letdown or dissatisfaction with an unmet expectation.",
+        "disgust": "The sentence indicates a strong aversion or revulsion towards an entity, action, or situation.",
+        "joy": "The sentence expresses a profound sense of happiness, pleasure, or delight.",
+        "excitement": "The sentence reflects high energy, enthusiasm, and positive anticipation.",
+        "pride": "The sentence communicates a sense of accomplishment and satisfaction in achievements or identity.",
+        "optimism": "The sentence conveys hopefulness and confidence about the future or positive outcomes.",
+        "gratitude": "The sentence expresses thankfulness, appreciation, or a sense of being supported.",
+        "love": "The sentence reflects deep affection, care, or a strong positive attachment.",
+        "surprise": "The sentence indicates an unexpected or astonishing reaction to new information or events.",
+        "neutral": "The sentence is stated in a factual, objective, or emotionally detached manner.",
+    }
+    return interpretations.get(top_emotion_name, "The sentence conveys this specific emotional state based on its context.")
+
 def get_suggestion(top_emotion_name):
     suggestions = {
-        "fear": "You may be experiencing uncertainty. Consider preparing step-by-step to reduce anxiety.",
-        "anxiety": "You might be feeling overwhelmed. Try to ground yourself and focus on one thing at a time.",
-        "anger": "You appear frustrated. It might be helpful to take a pause and reflect before proceeding.",
-        "sadness": "Experiencing this is difficult; consider taking some time for self-care and rest.",
-        "disappointment": "It is okay to feel let down. Acknowledge the feeling and look for small positive steps forward.",
-        "disgust": "You seem to be reacting strongly to something adverse. Stepping back may provide a better perspective.",
-        "joy": "This is a great moment! Encourage yourself to continue and build on this positive momentum.",
-        "excitement": "Harness this energy to push forward on your goals.",
-        "pride": "You've likely achieved something meaningful. Take a moment to appreciate your effort.",
-        "optimism": "A positive outlook is powerful. Keep focusing on the potential for good outcomes.",
-        "gratitude": "Appreciating the good things fosters resilience. Hold onto this positive perspective.",
-        "love": "This is a strong feeling of connection. Nurturing it can bring comfort and joy.",
-        "surprise": "Unexpected events can be jarring. Take a moment to process the new information.",
-        "neutral": "You seem to be in a balanced and even state of mind."
+        "fear": "Take a moment to ground yourself. Fear is often a reaction to uncertainty; try breaking the problem into smaller, manageable steps.",
+        "anxiety": "If you are feeling overwhelmed, focus on what you can control right now rather than what might happen later.",
+        "anger": "Your message reflects frustration. Taking a short break or discussing your expectations calmly might help resolve the situation.",
+        "sadness": "It is completely normal to feel this way. Consider reaching out to a friend or taking some time to process your feelings.",
+        "disappointment": "Setbacks can be discouraging. Revisit your expectations and focus on the lessons learned to move forward.",
+        "disgust": "You seem to be reacting strongly to an adverse situation. Stepping back may provide a more analytical perspective.",
+        "joy": "This is a great energetic state! Encourage yourself to build on this positive momentum.",
+        "excitement": "Harness this high energy to push forward on your most ambitious goals.",
+        "pride": "You've likely achieved something meaningful. Take a moment to explicitly recognize and appreciate your own effort.",
+        "optimism": "A positive outlook is highly resilient. Use this framing to tackle any upcoming challenges.",
+        "gratitude": "Appreciating the good things fosters long-term emotional stability. Continue holding onto this perspective.",
+        "love": "This is a strong feeling of connection. Nurturing it can bring significant comfort and psychological safety.",
+        "surprise": "Unexpected events can be jarring but also enlightening. Keep an open mind as you process the new information.",
+        "neutral": "You appear to be in a balanced, objective state of mind. This is an excellent state for logical decision-making."
     }
-    return suggestions.get(top_emotion_name, "Take a moment to process your feelings and proceed mindfully.")
+    return suggestions.get(top_emotion_name, "Take a moment to process your current state before proceeding.")
 
 def get_reliability(top_score):
     if top_score > 0.8:
@@ -147,6 +166,7 @@ def process_emotions(raw_results):
     probabilities = dict(sorted_emotions)
     sentiment, pos_score, neg_score = get_sentiment(probabilities)
     suggestion = get_suggestion(top_emotion)
+    interpretation = get_emotion_interpretation(top_emotion)
     reliability = get_reliability(top_score)
     dominance, balance, dom_text = get_dominance_metrics(sorted_emotions)
     entropy_score = get_entropy(probabilities)
@@ -160,12 +180,23 @@ def process_emotions(raw_results):
         "pos_score": pos_score,
         "neg_score": neg_score,
         "suggestion": suggestion,
+        "interpretation": interpretation,
         "reliability": reliability,
         "dominance": dominance,
         "balance": balance,
         "dominance_text": dom_text,
         "entropy": entropy_score
     }
+
+def get_hate_speech_interpretation(top_category):
+    if top_category == "hateful":
+        return "High", "The text contains explicit hate speech, severe toxicity, or highly discriminatory language."
+    elif top_category == "targeted":
+        return "High", "The text contains targeted insults, harassment, or direct threats towards an individual or group."
+    elif top_category == "aggressive":
+        return "Moderate", "The text contains aggressive, toxic, or obscene language that could be considered offensive, though it may not be explicitly hateful."
+    else:
+        return "Low", "The text contains no targeted insults, threats, or aggressive language."
 
 def process_toxicity(raw_results):
     hateful = raw_results.get("identity_hate", 0) + (raw_results.get("severe_toxic", 0) * 0.5)
@@ -193,7 +224,11 @@ def process_toxicity(raw_results):
     sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     top_cat = sorted_scores[0][0]
     
+    risk_level, explanation = get_hate_speech_interpretation(top_cat)
+    
     return {
         "top_category": top_cat,
-        "probabilities": dict(sorted_scores)
+        "probabilities": dict(sorted_scores),
+        "risk_level": risk_level,
+        "explanation": explanation
     }

@@ -4,14 +4,19 @@ import plotly.express as px
 from emotion_model import load_model, predict_emotion
 from hate_model import load_hate_model, predict_toxicity
 
-st.set_page_config(page_title="Emotion & Hate Speech Detection", layout="centered")
+import json
+
+st.set_page_config(page_title="Emotion Intelligence System", layout="centered")
+
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 st.markdown("""
 <div style="text-align: center; margin-bottom: 30px;">
     <h1 style="color: #2c3e50; font-family: 'Helvetica Neue', sans-serif;">Emotion Intelligence System</h1>
     <h3 style="color: #7f8c8d; font-family: 'Helvetica Neue', sans-serif; font-weight: 300;">AI-powered Emotion and Hate Speech Analysis</h3>
     <p style="color: #95a5a6; max-width: 600px; margin: 0 auto; line-height: 1.5;">
-        This tool analyzes text to detect emotional tone, mixed emotional states, and potential hate speech using transformer-based NLP models.
+        This tool analyzes emotional tone, detects mixed emotional states, and identifies toxic language using transformer-based NLP models.
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -65,15 +70,18 @@ if analyze_btn:
     with e_col1:
         html_content = f"""
         <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #e9ecef;'>
-            <p style='margin-bottom: 15px;'><b>Overall Sentiment:</b> {full_res['sentiment']}</p>
         """
         
         if "Mixed" in top_emo:
             html_content += f"<h4 style='margin-bottom: 5px;'>Primary Emotion: <b>{full_res['primary'].split(' ')[0].title()}</b></h4>"
             html_content += f"<h4 style='margin-bottom: 10px;'>Secondary Emotion: <b>{full_res['secondary'].split(' ')[0].title()}</b></h4>"
-            html_content += "<p style='font-style: italic; color: #555; margin-bottom: 0px;'>The sentence expresses an emotional conflict or blend of multiple distinct feelings.</p>"
         else:
-            html_content += f"<h4 style='margin-bottom: 0px;'>Primary Emotion: <b>{top_emo.title()}</b></h4>"
+            html_content += f"<h4 style='margin-bottom: 10px;'>Primary Emotion: <b>{top_emo.title()}</b></h4>"
+            
+        html_content += f"<div style='background-color: #ffffff; padding: 15px; border-left: 4px solid #3498db; margin-top: 15px;'>"
+        html_content += f"<p style='margin-bottom: 5px; color: #7f8c8d; font-size: 0.9em; text-transform: uppercase;'><b>Interpretation</b></p>"
+        html_content += f"<p style='color: #2c3e50; font-size: 1.0em; margin-bottom: 0;'>{full_res.get('interpretation', '')}</p>"
+        html_content += "</div>"
             
         html_content += "</div>"
         st.markdown(html_content, unsafe_allow_html=True)
@@ -85,21 +93,35 @@ if analyze_btn:
         conf_val = float(full_res['primary'].split(' ')[1].strip('()%')) / 100.0 if 'Mixed' not in top_emo else float(full_res['primary'].split(' ')[1].strip('()%')) / 100.0
         
         m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("Confidence", f"{conf_val*100:.0f}%", help="Prediction reliability.")
-        m_col2.metric("Dominance", f"{full_res['dominance']:.2f}", help="Indicates how strongly one emotion dominates.")
-        m_col3.metric("Balance Index", f"{full_res['balance']:.2f}", help="Measures emotional balance between top emotions.")
+        m_col1.metric("Confidence", f"{conf_val*100:.0f}%")
+        m_col2.metric("Dominance", f"{full_res['dominance']:.2f}")
+        m_col3.metric("Balance Index", f"{full_res['balance']:.2f}")
         
-        st.caption(f"*Interpretation: {full_res['dominance_text']}.*")
+        st.markdown("<div style='font-size: 0.9em; color: #555; margin-top: 5px; margin-bottom: 20px;'>", unsafe_allow_html=True)
+        st.markdown(f"**Confidence:** {full_res.get('reliability', 'High confident prediction.')}")
+        st.markdown(f"**Dominance:** {full_res.get('dominance_text', 'Emotion strongly dominant.')}")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown("#### Emotional Polarity")
+        p_col1, p_col2 = st.columns(2)
+        pos = full_res.get('pos_score', 0)
+        neg = full_res.get('neg_score', 0)
+        p_col1.metric("Positive Emotion", f"{pos*100:.0f}%")
+        p_col2.metric("Negative Emotion", f"{neg*100:.0f}%")
+        st.markdown(f"**Overall Tone:** {full_res['sentiment']}")
 
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Clause Breakdown
     if len(emo_results["clauses"]) > 1:
-        st.markdown("#### Clause-Level Breakdown")
+        st.markdown("#### Clause Analysis")
         for i, c_data in enumerate(emo_results["clauses"]):
             c_res = c_data["results"]
             c_top_str = c_res["primary"] if "Mixed" not in c_res["top_emotion"] else f"{c_res['primary']} & {c_res['secondary']}"
-            st.markdown(f"- **Clause {i+1}**: → {c_top_str}")
+            st.markdown(f"**Clause {i+1}** → {c_top_str}")
+        
+        final_emo = full_res['primary'].split(' ')[0].title() if "Mixed" not in top_emo else "Mixed Emotion"
+        st.markdown(f"**Final Result** → {final_emo}")
             
         has_pos = False
         has_neg = False
@@ -120,8 +142,15 @@ if analyze_btn:
     # Triggers and Insights
     triggers = full_res.get("trigger_words", [])
     if triggers:
-        st.markdown("**Emotional Triggers Detected:**")
-        st.markdown(", ".join([f"*{t}*" for t in triggers]))
+        st.markdown("#### Emotional Triggers")
+        import re
+        highlighted_text = text_input
+        for t in triggers:
+            # Add simple bolding for triggers
+            highlighted_text = re.sub(rf"(?i)\b({re.escape(t)})\b", r"**\1**", highlighted_text)
+            
+        st.markdown(f"> {highlighted_text}")
+        st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown("#### Suggested Insight")
     st.info(f"{full_res['suggestion']}")
@@ -145,26 +174,25 @@ if analyze_btn:
         
     df_emo['Color'] = df_emo.apply(get_color, axis=1)
     df_emo['Prob_Text'] = df_emo['Probability'].apply(lambda x: f"{x*100:.1f}%")
-    df_emo = df_emo.sort_values(by="Probability", ascending=False) # Largest on left
-    df_emo = df_emo[df_emo["Probability"] > 0.01].head(8) # compact top 8
+    df_emo = df_emo.sort_values(by="Probability", ascending=True) # Plotly draws bottom up
     
     fig_emo = px.bar(
         df_emo, 
-        x="Emotion", 
-        y="Probability", 
-        orientation='v',
+        y="Emotion", 
+        x="Probability", 
+        orientation='h',
         text="Prob_Text",
         color="Emotion",
         color_discrete_map={row['Emotion']: row['Color'] for _, row in df_emo.iterrows()}
     )
-    fig_emo.update_traces(textposition='outside', width=0.2)
+    fig_emo.update_traces(textposition='outside', width=0.4)
     fig_emo.update_layout(
-        height=350, 
+        height=400, 
         showlegend=False, 
         margin=dict(l=0, r=0, t=10, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=dict(showgrid=True, gridcolor='#f8f9fa', range=[0, 1.1])
+        xaxis=dict(showgrid=True, gridcolor='#f8f9fa', range=[0, 1.1])
     )
     st.plotly_chart(fig_emo, use_container_width=True)
     
@@ -173,20 +201,23 @@ if analyze_btn:
     # Hate Speech Section
     st.markdown("### 🛡️ Hate Speech Analysis")
     top_hate = hate_results["top_category"]
+    risk_level = hate_results.get("risk_level", "Low")
+    explanation = hate_results.get("explanation", "")
     
     html_content_h = f"""
     <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #e9ecef; margin-bottom: 20px;'>
-        <h4 style='margin-bottom: 10px;'>Top Category: <b>{top_hate.capitalize()}</b></h4>
+        <h4 style='margin-bottom: 15px;'>Top Category: <b>{top_hate.capitalize()}</b></h4>
     """
     
-    if top_hate != "neutral":
-        conf_val_h = hate_results['probabilities'][top_hate]
-        html_content_h += f"<p style='margin-bottom: 5px;'><i>Confidence: {conf_val_h*100:.0f}%</i></p>"
-        html_content_h += "<p style='font-style: italic; color: #555; margin-bottom: 0px;'>The model detected traces of aggressive or toxic language.</p>"
-    else:
-        conf_val_h = hate_results['probabilities'].get('neutral', 1.0)
-        html_content_h += f"<p style='margin-bottom: 5px;'><i>Confidence: {conf_val_h*100:.0f}%</i></p>"
-        html_content_h += "<p style='font-style: italic; color: #555; margin-bottom: 0px;'>The text appears to be clean standard language.</p>"
+    conf_val_h = hate_results['probabilities'].get(top_hate, 1.0)
+    
+    html_content_h += f"<p style='margin-bottom: 5px;'><i>Confidence: {conf_val_h*100:.0f}%</i></p>"
+    html_content_h += f"<p style='margin-bottom: 10px;'>Hate Speech Risk Level: <b>{risk_level}</b></p>"
+    
+    html_content_h += f"<div style='background-color: #ffffff; padding: 15px; border-left: 4px solid {'#e74c3c' if risk_level != 'Low' else '#95a5a6'};'>"
+    html_content_h += f"<p style='margin-bottom: 5px; color: #7f8c8d; font-size: 0.9em; text-transform: uppercase;'><b>Explanation</b></p>"
+    html_content_h += f"<p style='color: #2c3e50; font-size: 1.0em; margin-bottom: 0;'>{explanation}</p>"
+    html_content_h += "</div>"
         
     html_content_h += "</div>"
     st.markdown(html_content_h, unsafe_allow_html=True)
@@ -219,6 +250,40 @@ if analyze_btn:
         yaxis=dict(showgrid=True, gridcolor='#e9ecef', range=[0, 1.1])
     )
     st.plotly_chart(fig_hate, use_container_width=True)
+
+    # Add to History
+    st.session_state.history.append({
+        "text": text_input,
+        "emotion": top_emo,
+        "hate_category": top_hate,
+        "sentiment": full_res['sentiment']
+    })
+
+st.markdown("---")
+
+if st.session_state.history:
+    st.markdown("### 📈 Session History Trend")
+    
+    # Create Trend df
+    history_data = []
+    for i, h in enumerate(st.session_state.history):
+        history_data.append({"Entry": f"Entry {i+1}", "Emotion": h["emotion"].title()})
+        st.markdown(f"**Entry {i+1}** → _{h['emotion'].title()}_")
+        
+    df_trend = pd.DataFrame(history_data)
+    # Give line chart
+    fig_trend = px.line(df_trend, x="Entry", y="Emotion", markers=True)
+    fig_trend.update_layout(height=300, margin=dict(l=0, r=0, t=10, b=0), yaxis_title="Detected Emotion")
+    st.plotly_chart(fig_trend, use_container_width=True)
+    
+    # Download Button
+    report_json = json.dumps(st.session_state.history, indent=4)
+    st.download_button(
+        label="📄 Download Emotion Analysis Report",
+        data=report_json,
+        file_name="emotion_analysis_report.json",
+        mime="application/json"
+    )
         
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("""
