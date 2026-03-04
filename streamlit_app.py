@@ -53,6 +53,9 @@ if analyze_btn:
         
     st.markdown("---")
     
+    full_res = emo_results["full_sentence"]
+    top_emo = full_res["top_emotion"]
+    
     # --- UI LAYOUT WITH MAIN COLUMNS ---
     main_col1, main_col2 = st.columns([1, 1], gap="large")
     
